@@ -1,0 +1,93 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: de_postgres
+    environment:
+      POSTGRES_USER: de_user
+      POSTGRES_PASSWORD: de_password
+      POSTGRES_DB: academic_dw
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - de_network
+
+  minio:
+    image: minio/minio
+    container_name: de_minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - de_network
+
+  airflow-webserver:
+    image: apache/airflow:2.8.1
+    container_name: de_airflow_web
+    depends_on:
+      - postgres
+    environment:
+      AIRFLOW_HOME: /opt/airflow
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://de_user:de_password@postgres:5432/academic_dw
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__CORE__FERNET_KEY: "wZHNvZrwD8Gdlhb0jttX3UzZ8xSrRtzlOtTbFuERBEU="
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+    ports:
+      - "8080:8080"
+    command: airflow webserver
+    networks:
+      - de_network
+
+  airflow-scheduler:
+    image: apache/airflow:2.8.1
+    container_name: de_airflow_scheduler
+    depends_on:
+      - airflow-webserver
+    environment:
+      AIRFLOW_HOME: /opt/airflow
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://de_user:de_password@postgres:5432/academic_dw
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__CORE__FERNET_KEY: "wZHNvZrwD8Gdlhb0jttX3UzZ8xSrRtzlOtTbFuERBEU="
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+    command: airflow scheduler
+    networks:
+      - de_network
+
+  metabase:
+    image: metabase/metabase
+    container_name: de_metabase
+    depends_on:
+      - postgres
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: academic_dw
+      MB_DB_PORT: 5432
+      MB_DB_USER: de_user
+      MB_DB_PASS: de_password
+      MB_DB_HOST: postgres
+    ports:
+      - "3000:3000"
+    networks:
+      - de_network
+
+volumes:
+  postgres_data:
+  minio_data:
+
+networks:
+  de_network:
