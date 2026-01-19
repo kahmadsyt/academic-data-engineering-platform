@@ -69,6 +69,9 @@ Rencana pengembangan untuk meningkatkan skalabilitas dan kapabilitas platform:
 - Data Quality Framework: Integrasi Great Expectations untuk validasi data otomatis dan data profiling.
 
 👤 Author
+==========
 Achmad Kamil
+
 IT Infrastructure Engineer → Aspiring Data Engineer
+
 `Fokus pada pembangunan infrastruktur data yang efisien, skalabel, dan andal untuk sektor pendidikan.`
